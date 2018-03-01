@@ -224,9 +224,8 @@ public:
   /** Returns the transform resulting from the registration process  */
   const TransformOutputType * GetOutput() const;
 
-  /** Make a DataObject of the correct type to be used as the specified
-   * output. */
-  virtual DataObjectPointer MakeOutput(DataObjectPointerArraySizeType idx) override;
+  /** Returns the phase correlation image from the registration process  */
+  const RealImageType * GetPhaseCorrelationImage() const;
 
 #ifdef ITK_USE_CONCEPT_CHECKING
   itkStaticConstMacro(MovingImageDimension, unsigned int,
@@ -241,6 +240,10 @@ protected:
   virtual ~PhaseCorrelationImageRegistrationMethod() {};
   void PrintSelf(std::ostream& os, Indent indent) const override;
 
+  /** Make a DataObject of the correct type to be used as the specified
+   * output. */
+  virtual DataObjectPointer MakeOutput(DataObjectPointerArraySizeType idx) override;
+
   /** Initialize by setting the interconnects between the components. */
   virtual void Initialize();
 
@@ -253,6 +256,9 @@ protected:
   /** Method invoked by the pipeline in order to trigger the computation of
    * the registration. */
   void GenerateData() override;
+
+  /** Method invoked by the pipeline to determine the output information. */
+  void GenerateOutputInformation() override;
 
   /** Provides derived classes with the ability to set this private var */
   itkSetMacro( TransformParameters, ParametersType );
