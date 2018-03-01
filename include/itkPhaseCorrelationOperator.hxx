@@ -85,7 +85,7 @@ PhaseCorrelationOperator< TRealPixel, VImageDimension >
   // Define/declare an iterator that will walk the output region for this
   // thread.
   typedef  ImageRegionConstIterator<ImageType> InputIterator;
-  typedef  ImageRegionIterator<ImageType> OutputIterator;
+  typedef  ImageRegionIterator<ImageType>      OutputIterator;
 
   InputIterator fixedIt(fixed, outputRegionForThread);
   InputIterator movingIt(moving, outputRegionForThread);
