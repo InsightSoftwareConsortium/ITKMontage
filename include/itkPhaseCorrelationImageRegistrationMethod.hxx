@@ -29,19 +29,20 @@ PhaseCorrelationImageRegistrationMethod<TFixedImage,TMovingImage>
 ::PhaseCorrelationImageRegistrationMethod()
 {
   this->SetNumberOfRequiredInputs( 2 );
-  this->SetNumberOfRequiredOutputs( 1 );  // for the Transform
+  this->SetNumberOfRequiredOutputs( 2 );  // for 0-the Transform, 1-the phase correlation image
 
-  m_FixedImage       = 0; // has to be provided by the user.
-  m_MovingImage      = 0; // has to be provided by the user.
-  m_Operator         = 0; // has to be provided by the user.
-  m_RealOptimizer    = 0; // has to be provided by the user.
-  m_ComplexOptimizer = 0; // has to be provided by the user.
+  m_FixedImage = nullptr; // has to be provided by the user.
+  m_MovingImage = nullptr; // has to be provided by the user.
+  m_Operator = nullptr; // has to be provided by the user.
+  m_RealOptimizer = nullptr; // has to be provided by the user.
+  m_ComplexOptimizer = nullptr; // has to be provided by the user.
 
-  m_FixedPadder  = FixedPadderType::New();
+  m_FixedPadder = FixedPadderType::New();
   m_MovingPadder = MovingPadderType::New();
-  m_FixedFFT     = FFTFilterType::New();
-  m_MovingFFT    = FFTFilterType::New();
-  m_IFFT         = IFFTFilterType::New();
+  m_FixedFFT = FFTFilterType::New();
+  m_MovingFFT = FFTFilterType::New();
+  m_IFFT = IFFTFilterType::New();
+  m_CropFilter = CropFilterType::New();
 
   m_FixedPadder->SetConstant( 0 );
   m_MovingPadder->SetConstant( 0 );
@@ -49,6 +50,7 @@ PhaseCorrelationImageRegistrationMethod<TFixedImage,TMovingImage>
   m_FixedFFT->SetInput( m_FixedPadder->GetOutput() );
   m_MovingFFT->SetInput( m_MovingPadder->GetOutput() );
 
+  m_CropFilter->SetInput( m_IFFT->GetOutput() );
 
   m_TransformParameters = ParametersType(ImageDimension);
   m_TransformParameters.Fill( 0.0f );
@@ -56,49 +58,11 @@ PhaseCorrelationImageRegistrationMethod<TFixedImage,TMovingImage>
   TransformOutputPointer transformDecorator =
                  static_cast< TransformOutputType * >(
                                   this->MakeOutput(0).GetPointer() );
-
   this->ProcessObject::SetNthOutput( 0, transformDecorator.GetPointer() );
+  std::cout << "output is " << this->GetOutput()->Get() << std::endl;
 
-  itkDebugMacro( "output is " << this->GetOutput()->Get() );
-}
-
-
-template < typename TFixedImage, typename TMovingImage >
-unsigned long
-PhaseCorrelationImageRegistrationMethod<TFixedImage,TMovingImage>
-::GetMTime() const
-{
-  unsigned long mtime = Superclass::GetMTime();
-  unsigned long m;
-
-  if (m_Operator)
-    {
-    m = m_Operator->GetMTime();
-    mtime = (m > mtime ? m : mtime);
-    }
-  if (m_RealOptimizer)
-    {
-    m = m_RealOptimizer->GetMTime();
-    mtime = (m > mtime ? m : mtime);
-    }
-  if (m_ComplexOptimizer)
-    {
-    m = m_ComplexOptimizer->GetMTime();
-    mtime = (m > mtime ? m : mtime);
-    }
-  if (m_FixedImage)
-    {
-    m = m_FixedImage->GetMTime();
-    mtime = (m > mtime ? m : mtime);
-    }
-
-  if (m_MovingImage)
-    {
-    m = m_MovingImage->GetMTime();
-    mtime = (m > mtime ? m : mtime);
-    }
-
-  return mtime;
+  typename RealImageType::Pointer phaseCorrelation = static_cast< RealImageType * >( this->MakeOutput( 1 ).GetPointer() );
+  this->ProcessObject::SetNthOutput( 1, phaseCorrelation.GetPointer() );
 }
 
 
@@ -147,58 +111,91 @@ PhaseCorrelationImageRegistrationMethod<TFixedImage,TMovingImage>
   //
   // set up the pipeline
   //
-  m_FixedPadder->SetInput(        m_FixedImage             );
-  m_MovingPadder->SetInput(       m_MovingImage            );
-  m_Operator->SetFixedImage(      m_FixedFFT->GetOutput()  );
-  m_Operator->SetMovingImage(     m_MovingFFT->GetOutput() );
+  m_FixedPadder->SetInput( m_FixedImage );
+  m_MovingPadder->SetInput( m_MovingImage );
+  m_Operator->SetFixedImage( m_FixedFFT->GetOutput() );
+  m_Operator->SetMovingImage( m_MovingFFT->GetOutput() );
   if ( m_RealOptimizer )
     {
-    m_IFFT->SetInput(             m_Operator->GetOutput()  );
-    m_RealOptimizer->SetInput(    m_IFFT->GetOutput()      );
+    m_IFFT->SetInput( m_Operator->GetOutput() );
+    m_RealOptimizer->SetInput( m_CropFilter->GetOutput() );
     }
   else
     {
-    m_ComplexOptimizer->SetInput( m_Operator->GetOutput()  );
+    m_ComplexOptimizer->SetInput( m_Operator->GetOutput() );
     }
+}
 
+
+template < typename TFixedImage, typename TMovingImage >
+void
+PhaseCorrelationImageRegistrationMethod<TFixedImage,TMovingImage>
+::DeterminePadding()
+{
   //
   //set up padding to resize the images to cover the same real-space area
   //
   typename FixedImageType::SizeType fixedSize =
       m_FixedImage->GetLargestPossibleRegion().GetSize();
-  typename FixedImageType::SpacingType fixedSpacing =
-      m_FixedImage->GetSpacing();
   typename MovingImageType::SizeType movingSize =
       m_MovingImage->GetLargestPossibleRegion().GetSize();
-  typename MovingImageType::SpacingType movingSpacing =
-      m_MovingImage->GetSpacing();
 
   typename FixedImageType::SizeType fixedPad;
+  fixedPad.Fill( 0 );
   typename MovingImageType::SizeType movingPad;
+  movingPad.Fill( 0 );
 
-  for (int i=0; i<ImageDimension; i++)
+  typename CropFilterType::SizeType croppingSize;
+
+  const SizeValueType sizeGreatestPrimeFactor = m_FixedFFT->GetSizeGreatestPrimeFactor();
+
+  for (unsigned int ii = 0; ii < ImageDimension; ++ii)
     {
-    if ( fixedSize[i]*fixedSpacing[i] > movingSize[i]*movingSpacing[i] )
+    // First, pad so both images have the same size
+    if( fixedSize[ii] == movingSize[ii] )
       {
-      movingPad[i] = Math::Floor< SizeValueType >( fixedSize[i]*fixedSpacing[i]/movingSpacing[i] -
-                                  movingSize[i] );
-      fixedPad[i] = 0;
+      // no padding required
+      }
+    else if( fixedSize[ii] > movingSize[ii] )
+      {
+      movingPad[ii] = fixedSize[ii] - movingSize[ii];
       }
     else
       {
-      fixedPad[i] = Math::Floor< SizeValueType >( movingSize[i]*movingSpacing[i]/fixedSpacing[i] -
-                                fixedSize[i] );
-      movingPad[i] = 0;
+      fixedPad[ii] = movingSize[ii] - fixedSize[ii];
+      }
+
+    // Next, pad for the requirements of the FFT filter
+    if( sizeGreatestPrimeFactor > 1 )
+      {
+      while( Math::GreatestPrimeFactor( fixedSize[ii] + fixedPad[ii] ) > sizeGreatestPrimeFactor )
+        {
+        ++fixedPad[ii];
+        ++movingPad[ii];
+        }
+      }
+    else if( sizeGreatestPrimeFactor == 1 )
+      {
+      // make sure the total size is even
+      fixedPad[ii] += ( fixedSize[ii] + fixedPad[ii] ) % 2;
+      movingPad[ii] += ( movingSize[ii] + movingPad[ii] ) % 2;
+      }
+
+    // Crop back down to larger of the fixed or moving images
+    if( fixedSize[ii] > movingSize[ii] )
+      {
+      croppingSize[ii] = fixedPad[ii];
+      }
+    else
+      {
+      croppingSize[ii] = movingPad[ii];
       }
     }
 
   m_FixedPadder->SetPadUpperBound( fixedPad );
   m_MovingPadder->SetPadUpperBound( movingPad );
 
-  // set up the operator
-  // changed
-  m_Operator->SetFullMatrix( false );//m_FixedFFT->GetFullMatrix() );
-
+  m_CropFilter->SetUpperBoundaryCropSize( croppingSize );
 }
 
 
@@ -207,11 +204,18 @@ void
 PhaseCorrelationImageRegistrationMethod<TFixedImage,TMovingImage>
 ::StartOptimization()
 {
+  ParametersType empty(ImageDimension);
+  empty.Fill( 0.0 );
+  m_TransformParameters = empty;
   itkDebugMacro( "starting optimization" );
-  typedef typename RealImageType::PointType   OffsetType;
+  typedef typename RealOptimizerType::OffsetType OffsetType;
   OffsetType offset;
   try
     {
+    RealImageType * phaseCorrelation =  static_cast< RealImageType * >( this->ProcessObject::GetOutput(1) );
+    phaseCorrelation->Allocate();
+    m_CropFilter->GraftOutput( phaseCorrelation );
+    m_CropFilter->Update();
     if ( m_RealOptimizer )
       {
       m_RealOptimizer->Update();
@@ -222,6 +226,7 @@ PhaseCorrelationImageRegistrationMethod<TFixedImage,TMovingImage>
       m_ComplexOptimizer->Update();
       offset = m_ComplexOptimizer->GetOffset();
       }
+    phaseCorrelation->Graft( m_CropFilter->GetOutput() );
     }
   catch( ExceptionObject& err )
     {
@@ -237,7 +242,7 @@ PhaseCorrelationImageRegistrationMethod<TFixedImage,TMovingImage>
   m_TransformParameters = ParametersType( ImageDimension );
   typename FixedImageType::PointType fixedOrigin = m_FixedImage->GetOrigin();
   typename MovingImageType::PointType movingOrigin = m_MovingImage->GetOrigin();
-  for (int i = 0; i<ImageDimension; i++)
+  for( unsigned int i = 0; i < ImageDimension; ++i )
     {
     m_TransformParameters[i] = offset[i] - ( movingOrigin[i] - fixedOrigin[i] );
     }
@@ -277,34 +282,27 @@ PhaseCorrelationImageRegistrationMethod<TFixedImage,TMovingImage>
 template < typename TFixedImage, typename TMovingImage >
 void
 PhaseCorrelationImageRegistrationMethod<TFixedImage,TMovingImage>
+::GenerateOutputInformation()
+{
+  Superclass::GenerateOutputInformation();
+
+  this->Initialize();
+  this->DeterminePadding();
+
+  m_CropFilter->UpdateOutputInformation();
+
+  RealImageType * phaseCorrelation = static_cast< RealImageType * >( this->ProcessObject::GetOutput( 1 ) );
+  phaseCorrelation->CopyInformation( m_CropFilter->GetOutput() );
+}
+
+
+template < typename TFixedImage, typename TMovingImage >
+void
+PhaseCorrelationImageRegistrationMethod<TFixedImage,TMovingImage>
 ::GenerateData()
 {
-  if (!m_Updating)
-    {
-    this->Update();
-    }
-  else
-    {
-    ParametersType empty(ImageDimension);
-    empty.Fill( 0.0 );
-    try
-      {
-      // initialize the interconnects between components
-      this->Initialize();
-      }
-    catch( ExceptionObject& err )
-      {
-      itkDebugMacro( "exception caught during intialization - passing" );
-
-      m_TransformParameters = empty;
-
-      // pass exception to caller
-      throw err;
-      }
-    //execute the computation
-    this->StartOptimization();
-    }
-
+  this->Initialize();
+  this->StartOptimization();
 }
 
 
@@ -320,18 +318,31 @@ PhaseCorrelationImageRegistrationMethod<TFixedImage,TMovingImage>
 
 
 template < typename TFixedImage, typename TMovingImage >
+const typename PhaseCorrelationImageRegistrationMethod<TFixedImage,TMovingImage>
+    ::RealImageType *
+PhaseCorrelationImageRegistrationMethod<TFixedImage,TMovingImage>
+::GetPhaseCorrelationImage() const
+{
+  return static_cast< const RealImageType * >(
+                                            this->ProcessObject::GetOutput(1) );
+}
+
+
+template < typename TFixedImage, typename TMovingImage >
 DataObject::Pointer
 PhaseCorrelationImageRegistrationMethod<TFixedImage,TMovingImage>
-::MakeOutput(unsigned int output)
+::MakeOutput(DataObjectPointerArraySizeType output)
 {
   switch (output)
     {
     case 0:
       return static_cast<DataObject*>(TransformOutputType::New().GetPointer());
       break;
+    case 1:
+      return static_cast<DataObject*>(RealImageType::New().GetPointer());
+      break;
     default:
       itkExceptionMacro("MakeOutput request for an output number larger than the expected number of outputs");
-      return 0;
     }
 }
 
@@ -387,6 +398,7 @@ PhaseCorrelationImageRegistrationMethod<TFixedImage,TMovingImage>
   m_FixedFFT->SetReleaseDataFlag( a_flag );
   m_MovingFFT->SetReleaseDataFlag( a_flag );
   m_IFFT->SetReleaseDataFlag( a_flag );
+  m_CropFilter->SetReleaseDataFlag( a_flag );
 }
 
 
@@ -401,6 +413,7 @@ PhaseCorrelationImageRegistrationMethod<TFixedImage,TMovingImage>
   m_FixedFFT->SetReleaseDataBeforeUpdateFlag( a_flag );
   m_MovingFFT->SetReleaseDataBeforeUpdateFlag( a_flag );
   m_IFFT->SetReleaseDataBeforeUpdateFlag( a_flag );
+  m_CropFilter->SetReleaseDataBeforeUpdateFlag( a_flag );
 }
 
 
