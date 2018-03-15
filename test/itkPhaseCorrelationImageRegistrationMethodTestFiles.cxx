@@ -107,7 +107,7 @@ int PhaseCorrelationRegistrationFiles( int argc, char* argv[] )
     }
 
 
-  const double tolerance = 0.1;  // equivalent to 1 pixel.
+  const double tolerance = 9;
 
   // Validate first two parameters (introduced by image source)
   for( unsigned int ii = 0; ii < numberOfParameters; ++ii )
