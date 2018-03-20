@@ -84,7 +84,7 @@ MaxPhaseCorrelationOptimizer<TRegistrationMethod>
 
   for( unsigned int i = 0; i < ImageDimension; ++i )
     {
-    if ( index[i] > Math::floor( size[i] / 2.0 ) )
+    if ( index[i] > Math::floor( size[i] * 0.75 ) )
       {
       offset[i] = -1*(index[i] - size[i]) * spacing[i];
       }
