@@ -18,7 +18,7 @@
 
 #include "itkParseTileConfiguration.h"
 
-#include <string>
+#include <cassert>
 #include <fstream>
 #include <sstream>
 

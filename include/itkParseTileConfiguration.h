@@ -22,8 +22,7 @@
 #include "MontageExport.h"
 
 #include <string>
-#include <fstream>
-#include <sstream>
+#include <vector>
 
 #include "itkPoint.h"
 
