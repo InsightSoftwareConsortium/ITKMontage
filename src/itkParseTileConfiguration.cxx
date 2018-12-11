@@ -95,7 +95,7 @@ parseRow( std::string& line, std::istream& in, std::string& timePointID )
 
 namespace itk
 {
-Montage_EXPORT std::vector< std::vector< Tile< 2 > > >
+std::vector< std::vector< Tile< 2 > > >
 ParseTileConfiguration2D( const std::string pathToFile )
 {
   constexpr unsigned Dimension = 2;
