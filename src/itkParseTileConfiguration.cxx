@@ -102,7 +102,11 @@ parseRow( std::string& line, std::istream& in, std::string& timePointID )
   while (in)
     {
     tile = parseLine< Dimension >( line, timePointID );
-    if ( tile.Position[0] < row.back().Position[0] ) // this is start of a new row
+    double currentX = tile.Position[0];
+    double previousX = row.back().Position[0];
+    double currentY = tile.Position[1];
+    double previousY = row.back().Position[1];
+    if ( currentY != previousY && ( currentX == 0 || currentX == previousX ) ) // this is start of a new row
       {
       return row;
       }
