@@ -255,7 +255,7 @@ executeInMemoryMontageTest( const itk::TileLayout2D& stageTiles, const std::stri
 }
 
 /* -----------------------------------------------------------------------------------------------
- * Helper Method that creates a unit origin, unit spacing, and unit transform and passes them through
+ * Helper Method that creates a unit origin, unit spacing, and unit transform and calls the test
  * ----------------------------------------------------------------------------------------------- */
 template< typename PixelType, typename AccumulatePixelType >
 int
@@ -290,7 +290,7 @@ executeInMemoryMontageTest0( const itk::TileLayout2D& stageTiles, const std::str
 }
 
 /* -----------------------------------------------------------------------------------------------
- * Helper Method that creates a unit origin, dynamic spacing, and unit transform and passes them through
+ * Helper Method that creates a unit origin, dynamic spacing, and unit transform and calls the test
  * ----------------------------------------------------------------------------------------------- */
 template< typename PixelType, typename AccumulatePixelType >
 int
@@ -325,7 +325,7 @@ executeInMemoryMontageTest1( const itk::TileLayout2D& stageTiles, const std::str
 }
 
 /* -----------------------------------------------------------------------------------------------
- * Helper Method that creates a unit origin, unit spacing, and dynamic transform and passes them through
+ * Helper Method that creates a unit origin, unit spacing, and dynamic transform and calls the test
  * ----------------------------------------------------------------------------------------------- */
 template< typename PixelType, typename AccumulatePixelType >
 int
@@ -361,7 +361,7 @@ executeInMemoryMontageTest2( const itk::TileLayout2D& stageTiles, const std::str
 }
 
 /* -----------------------------------------------------------------------------------------------
- * Helper Method that creates a unit origin, dynamic spacing, and dynamic transform and passes them through
+ * Helper Method that creates a unit origin, dynamic spacing, and dynamic transform and calls the test
  * ----------------------------------------------------------------------------------------------- */
 template< typename PixelType, typename AccumulatePixelType >
 int
@@ -389,14 +389,29 @@ executeInMemoryMontageTest3( const itk::TileLayout2D& stageTiles, const std::str
 
   Spacing2D DS = createSpacing2D<Spacing2D,SpacingRow,SpacingType,Dimension>(yMontageSize, xMontageSize, 0.5);
 
-  Transform2D DT = createUnitTransform2D<Transform2D,TransformPtrRow,MontageType>(yMontageSize, xMontageSize);
+  Transform2D DT = createTransform2DFromStageTiles<Transform2D,TransformPtrRow,MontageType,itk::TileLayout2D,
+      itk::TileRow2D,itk::Tile2D>(stageTiles);
+
+  // Double all the DT values to account for the spacing of 0.5
+  for (TransformPtrRow &transform_row : DT)
+  {
+    for (typename MontageType::TransformPointer &transform : transform_row)
+    {
+      auto offset = transform->GetOffset();
+      for (unsigned i = 0; i < Dimension; i++)
+      {
+        offset[i] = offset[i] * 2;
+      }
+      transform->SetOffset(offset);
+    }
+  }
 
   return executeInMemoryMontageTest<PixelType,AccumulatePixelType,Origin2D,Spacing2D,
       Transform2D>(stageTiles, inputPath, outFilename, UO, DS, DT, streamSubdivisions);
 }
 
 /* -----------------------------------------------------------------------------------------------
- * Helper Method that creates a dynamic origin, unit spacing, and unit transform and passes them through
+ * Helper Method that creates a dynamic origin, unit spacing, and unit transform and calls the test
  * ----------------------------------------------------------------------------------------------- */
 template< typename PixelType, typename AccumulatePixelType >
 int
@@ -432,7 +447,7 @@ executeInMemoryMontageTest4( const itk::TileLayout2D& stageTiles, const std::str
 }
 
 /* -----------------------------------------------------------------------------------------------
- * Helper Method that creates a dynamic origin, dynamic spacing, and unit transform and passes them through
+ * Helper Method that creates a dynamic origin, dynamic spacing, and unit transform and calls the test
  * ----------------------------------------------------------------------------------------------- */
 template< typename PixelType, typename AccumulatePixelType >
 int
@@ -459,6 +474,18 @@ executeInMemoryMontageTest5( const itk::TileLayout2D& stageTiles, const std::str
   Origin2D DO = createOrigin2DFromStageTiles<Origin2D,OriginRow,OriginPoint,
       itk::TileLayout2D,itk::TileRow2D,itk::Tile2D>(stageTiles);
 
+  // Double all the DO values to account for the spacing of 0.5
+  for (OriginRow &origin_row : DO)
+  {
+    for (OriginPoint &origin : origin_row)
+    {
+      for (unsigned i = 0; i < Dimension; i++)
+      {
+        origin[i] = origin[i] * 2;
+      }
+    }
+  }
+
   Spacing2D DS = createSpacing2D<Spacing2D,SpacingRow,SpacingType,Dimension>(yMontageSize, xMontageSize, 0.5);
 
   Transform2D UT = createUnitTransform2D<Transform2D,TransformPtrRow,MontageType>(yMontageSize, xMontageSize);
@@ -468,7 +495,7 @@ executeInMemoryMontageTest5( const itk::TileLayout2D& stageTiles, const std::str
 }
 
 /* -----------------------------------------------------------------------------------------------
- * Helper Method that creates a dynamic origin, unit spacing, and dynamic transform and passes them through
+ * Helper Method that creates a dynamic origin, unit spacing, and dynamic transform and calls the test
  * ----------------------------------------------------------------------------------------------- */
 template< typename PixelType, typename AccumulatePixelType >
 int
@@ -492,19 +519,52 @@ executeInMemoryMontageTest6( const itk::TileLayout2D& stageTiles, const std::str
   unsigned yMontageSize = stageTiles.size();
   unsigned xMontageSize = stageTiles[0].size();
 
-  Origin2D DO = createOrigin2DFromStageTiles<Origin2D,OriginRow,OriginPoint,
-      itk::TileLayout2D,itk::TileRow2D,itk::Tile2D>(stageTiles);
+  // Create DO values so that the tiles start out [col * 100] pixels away from the correct position
+  Origin2D DO;
+  for (itk::TileRow2D tileRow : stageTiles)
+  {
+    OriginRow row;
+    for (int col = 0; col < tileRow.size(); col++)
+    {
+      itk::Tile2D tile = tileRow[col];
+      itk::Point< double, Dimension > pos = tile.Position;
+      for (int i = 0; i < Dimension; i++)
+      {
+        // Get correct origin value, then add [col * 100] to it
+        pos[i] = pos[i] + (col * 100);
+      }
+      row.push_back(pos);
+    }
+    DO.push_back(row);
+  }
 
   Spacing2D US = createSpacing2D<Spacing2D,SpacingRow,SpacingType,Dimension>(yMontageSize, xMontageSize, 1);
 
-  Transform2D DT = createUnitTransform2D<Transform2D,TransformPtrRow,MontageType>(yMontageSize, xMontageSize);
+  // Create DT values so that the tiles are translated back to their correct positions
+  Transform2D DT;
+  for (int row = 0; row < yMontageSize; row++)
+  {
+    TransformPtrRow transform_row;
+    for (int col = 0; col < xMontageSize; col++)
+    {
+      typename MontageType::TransformPointer transform = MontageType::TransformType::New();
+      auto offset = transform->GetOffset();
+      for (unsigned i = 0; i < Dimension; i++)
+      {
+        offset[i] = -(col * 100);
+      }
+      transform->SetOffset(offset);
+      transform_row.push_back(transform);
+    }
+    DT.push_back(transform_row);
+  }
 
   return executeInMemoryMontageTest<PixelType,AccumulatePixelType,Origin2D,Spacing2D,
       Transform2D>(stageTiles, inputPath, outFilename, DO, US, DT, streamSubdivisions);
 }
 
 /* -----------------------------------------------------------------------------------------------
- * Helper Method that creates a dynamic origin, dynamic spacing, and dynamic transform and passes them through
+ * Helper Method that creates a dynamic origin, dynamic spacing, and dynamic transform and calls the test
  * ----------------------------------------------------------------------------------------------- */
 template< typename PixelType, typename AccumulatePixelType >
 int
@@ -528,12 +588,45 @@ executeInMemoryMontageTest7( const itk::TileLayout2D& stageTiles, const std::str
   unsigned yMontageSize = stageTiles.size();
   unsigned xMontageSize = stageTiles[0].size();
 
-  Origin2D DO = createOrigin2DFromStageTiles<Origin2D,OriginRow,OriginPoint,
-      itk::TileLayout2D,itk::TileRow2D,itk::Tile2D>(stageTiles);
+  // Create DO values so that the tiles start out [col * 100] pixels away from the correct position
+  Origin2D DO;
+  for (itk::TileRow2D tileRow : stageTiles)
+  {
+    OriginRow row;
+    for (int col = 0; col < tileRow.size(); col++)
+    {
+      itk::Tile2D tile = tileRow[col];
+      itk::Point< double, Dimension > pos = tile.Position;
+      for (int i = 0; i < Dimension; i++)
+      {
+        // Get correct origin value, multiply by 2 to account for the 0.5 spacing, then add [col * 100]
+        pos[i] = (pos[i] * 2) + (col * 100);
+      }
+      row.push_back(pos);
+    }
+    DO.push_back(row);
+  }
 
   Spacing2D DS = createSpacing2D<Spacing2D,SpacingRow,SpacingType,Dimension>(yMontageSize, xMontageSize, 0.5);
 
-  Transform2D DT = createUnitTransform2D<Transform2D,TransformPtrRow,MontageType>(yMontageSize, xMontageSize);
+  // Create DT values so that the tiles are translated back to their correct positions
+  Transform2D DT;
+  for (int row = 0; row < yMontageSize; row++)
+  {
+    TransformPtrRow transform_row;
+    for (int col = 0; col < xMontageSize; col++)
+    {
+      typename MontageType::TransformPointer transform = MontageType::TransformType::New();
+      auto offset = transform->GetOffset();
+      for (unsigned i = 0; i < Dimension; i++)
+      {
+        offset[i] = -(col * 100);
+      }
+      transform->SetOffset(offset);
+      transform_row.push_back(transform);
+    }
+    DT.push_back(transform_row);
+  }
 
   return executeInMemoryMontageTest<PixelType,AccumulatePixelType,Origin2D,Spacing2D,
       Transform2D>(stageTiles, inputPath, outFilename, DO, DS, DT, streamSubdivisions);
