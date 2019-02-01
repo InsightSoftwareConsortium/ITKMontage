@@ -20,18 +20,6 @@
 #include "itkParseTileConfiguration.h"
 #include "itkRGBPixel.h"
 
-enum class TestVariation : unsigned int
-{
-  UOrigin_USpacing_UTransform = 0,
-  UOrigin_DSpacing_UTransform,
-  UOrigin_USpacing_DTransform,
-  UOrigin_DSpacing_DTransform,
-  DOrigin_USpacing_UTransform,
-  DOrigin_DSpacing_UTransform,
-  DOrigin_USpacing_DTransform,
-  DOrigin_DSpacing_DTransform,
-};
-
 int itkInMemoryMontageTest2D(int argc, char* argv[])
 {
   if ( argc < 3 )
@@ -39,12 +27,6 @@ int itkInMemoryMontageTest2D(int argc, char* argv[])
     std::cerr << "Usage: " << argv[0] << " <directoryWithInputData> <montageTSV>";
     std::cerr << " [ variation streamSubdivisions ]" << std::endl;
     return EXIT_FAILURE;
-    }
-
-  TestVariation variation = TestVariation::UOrigin_USpacing_UTransform;
-  if ( argc > 3 )
-    {
-    variation = static_cast<TestVariation>(std::stoul( argv[3] ));
     }
 
   unsigned streamSubdivisions = 1;
@@ -69,15 +51,30 @@ int itkInMemoryMontageTest2D(int argc, char* argv[])
 
   std::string outFileName = std::string(argv[2]);
 
-  int r1;
   if (pixelType == itk::ImageIOBase::IOPixelType::RGB)
     {
-    return inMemoryMontageTest< itk::RGBPixel< unsigned char >, itk::RGBPixel< unsigned int >, TestVariation >(
-      stageTiles, inputPath, outFileName, variation, streamSubdivisions );
+    using TestTransformType = InMemoryMontageTest< itk::RGBPixel< unsigned char >, itk::RGBPixel< unsigned int > >;
+
+    TestTransformType::TestVariation variation = TestTransformType::TestVariation::UOrigin_USpacing_UTransform;
+    if ( argc > 3 )
+    {
+      variation = static_cast<TestTransformType::TestVariation>(std::stoul( argv[3] ));
+    }
+
+    TestTransformType::Pointer testObject = TestTransformType::New();
+    return testObject->execute(stageTiles, inputPath, outFileName, variation, streamSubdivisions );
     }
   else
     {
-    return inMemoryMontageTest< unsigned short, double, TestVariation >(
-      stageTiles, inputPath, outFileName, variation, streamSubdivisions );
+    using TestTransformType = InMemoryMontageTest< unsigned short, double >;
+
+    TestTransformType::TestVariation variation = TestTransformType::TestVariation::UOrigin_USpacing_UTransform;
+    if ( argc > 3 )
+    {
+      variation = static_cast<TestTransformType::TestVariation>(std::stoul( argv[3] ));
+    }
+
+    TestTransformType::Pointer testObject = TestTransformType::New();
+    return testObject->execute(stageTiles, inputPath, outFileName, variation, streamSubdivisions );
     }
 }
