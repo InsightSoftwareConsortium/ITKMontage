@@ -156,7 +156,7 @@ function(AddInMemoryMontageTest variation willFail)
     COMMAND MontageTestDriver
       --compare DATA{${CMAKE_CURRENT_LIST_DIR}/Input/VisibleHumanRGB/VisibleHumanMale1608.png}
                      ${TESTING_OUTPUT_PATH}/itkInMemoryMontageTestRGB${variation}.mha
-      itkInMemoryMontageTest
+      itkInMemoryMontageTest2D
         DATA{${CMAKE_CURRENT_LIST_DIR}/Input/VisibleHumanRGB/,REGEX:.*}
         ${TESTING_OUTPUT_PATH}/itkInMemoryMontageTestRGB
         ${variation}
