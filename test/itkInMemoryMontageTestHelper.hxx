@@ -16,8 +16,8 @@
  *
  *=========================================================================*/
 
-#ifndef itkMontageTestHelper_hxx
-#define itkMontageTestHelper_hxx
+#ifndef itkInMemoryMontageTestHelper_hxx
+#define itkInMemoryMontageTestHelper_hxx
 
 #include "itkAffineTransform.h"
 #include "itkImageFileWriter.h"
@@ -581,4 +581,4 @@ class ITK_TEMPLATE_EXPORT InMemoryMontageTest : public itk::Object
     }
 };
 
-#endif // itkMontageTestHelper_hxx
+#endif // itkInMemoryMontageTestHelper_hxx
