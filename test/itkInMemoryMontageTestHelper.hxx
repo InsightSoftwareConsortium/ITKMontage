@@ -310,10 +310,10 @@ class ITK_TEMPLATE_EXPORT InMemoryMontageTest : public itk::Object
 
       // Create DT values so that the tiles are translated back to their correct positions
       Transform2D DT;
-      for (int row = 0; row < yMontageSize; row++)
+      for ( unsigned row = 0; row < yMontageSize; row++ )
       {
         TransformPtrRow transform_row;
-        for (int col = 0; col < xMontageSize; col++)
+        for ( unsigned col = 0; col < xMontageSize; col++ )
         {
           typename MontageType::TransformPointer transform = MontageType::TransformType::New();
           auto offset = transform->GetOffset();
@@ -362,10 +362,10 @@ class ITK_TEMPLATE_EXPORT InMemoryMontageTest : public itk::Object
 
       // Create DT values so that the tiles are translated back to their correct positions
       Transform2D DT;
-      for (int row = 0; row < yMontageSize; row++)
+      for ( unsigned row = 0; row < yMontageSize; row++ )
       {
         TransformPtrRow transform_row;
-        for (int col = 0; col < xMontageSize; col++)
+        for ( unsigned col = 0; col < xMontageSize; col++ )
         {
           typename MontageType::TransformPointer transform = MontageType::TransformType::New();
           auto offset = transform->GetOffset();
