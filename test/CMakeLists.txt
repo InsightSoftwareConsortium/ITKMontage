@@ -154,9 +154,10 @@ itk_add_test(NAME itkMontageTestRGB
 function(AddInMemoryMontageTest variation willFail)
   itk_add_test(NAME itkInMemoryMontageTest${variation}
     COMMAND MontageTestDriver
-      --compare --compareRadiusTolerance 1 DATA{${CMAKE_CURRENT_LIST_DIR}/Input/VisibleHumanRGB/VisibleHumanMale1608.png}
+      --compare DATA{${CMAKE_CURRENT_LIST_DIR}/Input/VisibleHumanRGB/VisibleHumanMale1608.png}
                      ${TESTING_OUTPUT_PATH}/itkInMemoryMontageTestRGB${variation}.mha
       --ignoreInputInformation # ignore different spacing
+      --compareRadiusTolerance 1
       itkInMemoryMontageTest2D
         DATA{${CMAKE_CURRENT_LIST_DIR}/Input/VisibleHumanRGB/,REGEX:.*}
         ${TESTING_OUTPUT_PATH}/itkInMemoryMontageTestRGB
