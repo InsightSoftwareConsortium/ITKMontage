@@ -319,7 +319,7 @@ class ITK_TEMPLATE_EXPORT InMemoryMontageTest : public itk::Object
           auto offset = transform->GetOffset();
           for (unsigned i = 0; i < Dimension; i++)
           {
-            offset[i] = -(col * 100);
+            offset[i] = (col * 100);
           }
           transform->SetOffset(offset);
           transform_row.push_back(transform);
@@ -371,7 +371,7 @@ class ITK_TEMPLATE_EXPORT InMemoryMontageTest : public itk::Object
           auto offset = transform->GetOffset();
           for (unsigned i = 0; i < Dimension; i++)
           {
-            offset[i] = -(col * 100);
+            offset[i] = (col * 100);
           }
           transform->SetOffset(offset);
           transform_row.push_back(transform);
@@ -540,7 +540,7 @@ class ITK_TEMPLATE_EXPORT InMemoryMontageTest : public itk::Object
           auto offset = transform->GetOffset();
           for (unsigned i = 0; i < MontageType::TransformType::SpaceDimension; i++)
           {
-            offset[i] = tile.Position[i];
+            offset[i] = -tile.Position[i];
           }
 
           transform->SetOffset(offset);
