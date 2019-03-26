@@ -289,11 +289,11 @@ private:
     for ( itk::TileRow2D tileRow : stageTiles )
       {
       OriginRow row;
-      for ( int col = 0; col < tileRow.size(); col++ )
+      for ( unsigned col = 0; col < tileRow.size(); col++ )
         {
         itk::Tile2D tile = tileRow[col];
         itk::Point< double, Dimension > pos = tile.Position;
-        for ( int i = 0; i < Dimension; i++ )
+        for ( unsigned i = 0; i < Dimension; i++ )
           {
           // Get correct origin value, then add [col * 100] to it
           pos[i] = pos[i] + ( col * 100 );
@@ -342,11 +342,11 @@ private:
     for ( itk::TileRow2D tileRow : stageTiles )
       {
       OriginRow row;
-      for ( int col = 0; col < tileRow.size(); col++ )
+      for ( unsigned col = 0; col < tileRow.size(); col++ )
         {
         itk::Tile2D tile = tileRow[col];
         itk::Point< double, Dimension > pos = tile.Position;
-        for ( int i = 0; i < Dimension; i++ )
+        for ( unsigned i = 0; i < Dimension; i++ )
           {
           // Get correct origin value, divide by 2 to account for the 0.5 spacing, then add [col * 100]
           pos[i] = ( pos[i] / 2 ) + ( col * 100 );
@@ -448,7 +448,7 @@ private:
     Origin2D UO;
 
     OriginPoint UO_point;
-    for ( int i = 0; i < Dimension; i++ )
+    for ( unsigned i = 0; i < Dimension; i++ )
       {
       UO_point[i] = 0;
       }
@@ -490,7 +490,7 @@ private:
     Spacing2D US;
 
     SpacingType spacing;
-    for ( int i = 0; i < Dimension; i++ )
+    for ( unsigned i = 0; i < Dimension; i++ )
       {
       spacing[i] = value;
       }

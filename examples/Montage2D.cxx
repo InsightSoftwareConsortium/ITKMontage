@@ -60,8 +60,8 @@ template< typename PixelType, typename AccumulatePixelType >
 void
 montage2D( const itk::TileLayout2D& stageTiles,
            const std::string& inputPath, const std::string& outputPath,
-           const std::string& outFilename, int peakMethodToUse,
-           bool setMontageDirectly, unsigned streamSubdivisions )
+           const std::string& outFilename, int itkNotUsed( peakMethodToUse ),
+           bool itkNotUsed( setMontageDirectly ), unsigned streamSubdivisions )
 {
   using ScalarPixelType = typename itk::NumericTraits< PixelType >::ValueType;
   constexpr unsigned Dimension = 2;
@@ -208,7 +208,7 @@ int main( int argc, char *argv[] )
     imageIO->SetFileName( inputPath + stageTiles[0][0].FileName );
     imageIO->ReadImageInformation();
 
-    const unsigned numDimensions = imageIO->GetNumberOfDimensions();
+    auto numDimensions = imageIO->GetNumberOfDimensions();
     if ( numDimensions != 2 )
       {
       itkGenericExceptionMacro( "Only 2D images are supported!" );

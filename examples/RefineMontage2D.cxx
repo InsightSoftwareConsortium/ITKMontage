@@ -29,13 +29,12 @@
 template< typename PixelType, typename AccumulatePixelType >
 void
 montage2D( const itk::TileLayout2D& stageTiles, itk::TileLayout2D& actualTiles,
-           const std::string& inputPath, int peakMethodToUse )
+           const std::string& inputPath, int itkNotUsed( peakMethodToUse ) )
 {
   using ScalarPixelType = typename itk::NumericTraits< PixelType >::ValueType;
   constexpr unsigned Dimension = 2;
   using TransformType = itk::TranslationTransform< double, Dimension >;
   using ScalarImageType = itk::Image< ScalarPixelType, Dimension >;
-  using OriginalImageType = itk::Image< PixelType, Dimension >; // possibly RGB instead of scalar
   using PCMType = itk::PhaseCorrelationImageRegistrationMethod< ScalarImageType, ScalarImageType >;
   typename ScalarImageType::SpacingType sp;
   sp.Fill( 1.0 ); // most data assumes unit spacing, even if the files themselves have something else (72 DPI, 96 DPI, 300 DPI etc)
@@ -95,8 +94,6 @@ int main( int argc, char *argv[] )
     return EXIT_FAILURE;
     }
 
-  constexpr unsigned Dimension = 2;
-
   std::string inputPath = itksys::SystemTools::GetFilenamePath( argv[1] );
   if ( !inputPath.empty() ) // a path was given in addition to file name
     {
@@ -113,7 +110,7 @@ int main( int argc, char *argv[] )
     imageIO->SetFileName( inputPath + stageTiles[0][0].FileName );
     imageIO->ReadImageInformation();
 
-    const unsigned numDimensions = imageIO->GetNumberOfDimensions();
+    auto numDimensions = imageIO->GetNumberOfDimensions();
     if ( numDimensions != 2 )
       {
       itkGenericExceptionMacro( "Only 2D images are supported!" );
@@ -129,7 +126,7 @@ int main( int argc, char *argv[] )
         case itk::ImageIOBase::IOComponentType::USHORT:
           montage2D< unsigned short, double >( stageTiles, actualTiles, inputPath, 1 );
           break;
-        default: // instantiating too many types leads to long compileation time and big executable
+        default: // instantiating too many types leads to long compilation time and big executable
           itkGenericExceptionMacro( "Only unsigned char and unsigned short are supported!" );
           break;
       }
