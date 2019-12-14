@@ -1,1 +1,3 @@
 It is a 100 (10x10) tile montage cut from a larger monolithic image.  Each tile is 1024 x 1024.  The tiles have 50% overlap (ie the cutting template was shifted 512 pixels between tiles).  Additionally, I added some 'slop' to the shifts to simulate montage artifacts.  I have two files that can accompany the tiles.  The first is the intended locations of the 100 tiles (ie perfect stage movement) and the second is the actual location.
+TileConfiguration3D is a 169 (13 x 13) tile montage of 320 x 320 x 150 images with an overlap of 40 pixels between tiles. 
+TileConfiguration3D.registered is the actual registered location of the 3D blocks.
