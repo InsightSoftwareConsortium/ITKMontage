@@ -507,21 +507,21 @@ completeMontage(const itk::TileConfiguration<Dimension> & stageTiles,
                 const std::string &                       inputPath,
                 const std::string &                       outputPath,
                 const std::string &                       outFilename,
-                itk::ImageIOBase::IOPixelType             pixelType,
+                itk::CommonEnums::IOPixel                 pixelType,
                 bool                                      correctBias,
                 bool                                      denoise)
 {
   switch (pixelType)
   {
-    case itk::ImageIOBase::IOPixelType::SCALAR:
+    case itk::CommonEnums::IOPixel::SCALAR:
       completeMontage<Dimension, ComponentType, AccumulatePixelType>(
         stageTiles, inputPath, outputPath, outFilename, correctBias, denoise);
       break;
-    case itk::ImageIOBase::IOPixelType::RGB:
+    case itk::CommonEnums::IOPixel::RGB:
       completeMontage<Dimension, itk::RGBPixel<ComponentType>, itk::RGBPixel<AccumulatePixelType>>(
         stageTiles, inputPath, outputPath, outFilename, correctBias, denoise);
       break;
-    case itk::ImageIOBase::IOPixelType::RGBA:
+    case itk::CommonEnums::IOPixel::RGBA:
       completeMontage<Dimension, itk::RGBAPixel<ComponentType>, itk::RGBAPixel<AccumulatePixelType>>(
         stageTiles, inputPath, outputPath, outFilename, correctBias, denoise);
       break;
@@ -561,7 +561,7 @@ mainHelper(int argc, char * argv[], std::string inputPath)
 
   std::string               firstFilename = inputPath + stageTiles.Tiles[0].FileName;
   itk::ImageIOBase::Pointer imageIO =
-    itk::ImageIOFactory::CreateImageIO(firstFilename.c_str(), itk::ImageIOFactory::FileModeEnum::ReadMode);
+    itk::ImageIOFactory::CreateImageIO(firstFilename.c_str(), itk::CommonEnums::IOFileMode::ReadMode);
   imageIO->SetFileName(firstFilename);
   imageIO->ReadImageInformation();
 
@@ -573,19 +573,19 @@ mainHelper(int argc, char * argv[], std::string inputPath)
                                                                  << numDimensions)
   }
 
-  const itk::ImageIOBase::IOPixelType     pixelType = imageIO->GetPixelType();
-  const itk::ImageIOBase::IOComponentType componentType = imageIO->GetComponentType();
+  const itk::CommonEnums::IOPixel     pixelType = imageIO->GetPixelType();
+  const itk::CommonEnums::IOComponent componentType = imageIO->GetComponentType();
   switch (componentType)
   {
-    case itk::ImageIOBase::IOComponentType::UCHAR:
+    case itk::CommonEnums::IOComponent::UCHAR:
       completeMontage<Dimension, unsigned char, unsigned int>(
         stageTiles, inputPath, outputPath, outFile, pixelType, doBiasCorrection, doDenoising);
       break;
-    case itk::ImageIOBase::IOComponentType::USHORT:
+    case itk::CommonEnums::IOComponent::USHORT:
       completeMontage<Dimension, unsigned short, double>(
         stageTiles, inputPath, outputPath, outFile, pixelType, doBiasCorrection, doDenoising);
       break;
-    case itk::ImageIOBase::IOComponentType::SHORT:
+    case itk::CommonEnums::IOComponent::SHORT:
       completeMontage<Dimension, short, double>(
         stageTiles, inputPath, outputPath, outFile, pixelType, doBiasCorrection, doDenoising);
       break;

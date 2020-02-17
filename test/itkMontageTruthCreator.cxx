@@ -173,9 +173,9 @@ CreateGroundTruth(int argc, char * argv[], unsigned dimension)
 
 template <typename ComponentType>
 int
-CreateGroundTruth(int argc, char * argv[], unsigned dimension, itk::ImageIOBase::IOPixelType pixelType)
+CreateGroundTruth(int argc, char * argv[], unsigned dimension, itk::CommonEnums::IOPixel pixelType)
 {
-  if (pixelType == itk::ImageIOBase::IOPixelType::RGB) // possibly add RGBA
+  if (pixelType == itk::CommonEnums::IOPixel::RGB) // possibly add RGBA
   {
     return CreateGroundTruth<itk::RGBPixel<ComponentType>>(argc, argv, dimension);
   }
@@ -199,21 +199,21 @@ itkMontageTruthCreator(int argc, char * argv[])
   try
   {
     itk::ImageIOBase::Pointer imageIO =
-      itk::ImageIOFactory::CreateImageIO(argv[1], itk::ImageIOFactory::FileModeEnum::ReadMode);
+      itk::ImageIOFactory::CreateImageIO(argv[1], itk::CommonEnums::IOFileMode::ReadMode);
     imageIO->SetFileName(argv[1]);
     imageIO->ReadImageInformation();
-    unsigned                                dim = imageIO->GetNumberOfDimensions();
-    const itk::ImageIOBase::IOComponentType cType = imageIO->GetComponentType();
+    unsigned                            dim = imageIO->GetNumberOfDimensions();
+    const itk::CommonEnums::IOComponent cType = imageIO->GetComponentType();
 
-    if (cType == itk::ImageIOBase::IOComponentType::UCHAR)
+    if (cType == itk::CommonEnums::IOComponent::UCHAR)
     {
       return CreateGroundTruth<unsigned char>(argc, argv, dim, imageIO->GetPixelType());
     }
-    else if (cType == itk::ImageIOBase::IOComponentType::USHORT)
+    else if (cType == itk::CommonEnums::IOComponent::USHORT)
     {
       return CreateGroundTruth<unsigned short>(argc, argv, dim, imageIO->GetPixelType());
     }
-    else if (cType == itk::ImageIOBase::IOComponentType::SHORT)
+    else if (cType == itk::CommonEnums::IOComponent::SHORT)
     {
       return CreateGroundTruth<short>(argc, argv, dim, imageIO->GetPixelType());
     }
