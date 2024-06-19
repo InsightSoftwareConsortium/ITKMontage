@@ -1,16 +1,15 @@
 name: Build, test, package
-
-on: [push,pull_request]
-
+true:
+- push
+- pull_request
 jobs:
   cxx-build-workflow:
-    uses: InsightSoftwareConsortium/ITKRemoteModuleBuildTestPackageAction/.github/workflows/build-test-cxx.yml@b223658f3ab10680ab2ec3286d070b9601ea6ef1
+    uses: InsightSoftwareConsortium/ITKRemoteModuleBuildTestPackageAction/.github/workflows/build-test-cxx.yml@v5.4.0
     with:
-      cmake-options: "Module_Montage_BUILD_EXAMPLES:BOOL=ON"
-
+      cmake-options: Module_Montage_BUILD_EXAMPLES:BOOL=ON
   python-build-workflow:
-    uses: InsightSoftwareConsortium/ITKRemoteModuleBuildTestPackageAction/.github/workflows/build-test-package-python.yml@b223658f3ab10680ab2ec3286d070b9601ea6ef1
-    with:
-      test-notebooks: true
     secrets:
       pypi_password: ${{ secrets.pypi_password }}
+    uses: InsightSoftwareConsortium/ITKRemoteModuleBuildTestPackageAction/.github/workflows/build-test-package-python.yml@v5.4.0
+    with:
+      test-notebooks: true
