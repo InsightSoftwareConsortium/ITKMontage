@@ -4,7 +4,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "itk-montage"
-version = "0.8.4"
+version = "0.8.5"
 description = "Montaging for microscopy imaging files."
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -14,6 +14,7 @@ authors = [
 ]
 keywords = [
     "itk",
+    "InsightToolkit",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -50,7 +51,7 @@ Homepage = "https://github.com/InsightSoftwareConsortium/ITKMontage"
 # The versions of CMake to allow. If CMake is not present on the system or does
 # not pass this specifier, it will be downloaded via PyPI if possible. An empty
 # string will disable this check.
-cmake.version = ">=3.16.3"
+cmake.version = ">=3.22.1"
 
 # A list of args to pass to CMake when configuring the project. Setting this in
 # config or envvar will override toml. See also ``cmake.define``.
