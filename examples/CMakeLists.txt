@@ -20,25 +20,24 @@ else()
   # lists of modules are not yet ready, causing a configure error
   find_package(ITK REQUIRED COMPONENTS ${ExampleSpecificComponents})
 endif()
-include(${ITK_USE_FILE})
 
 add_executable(PhaseCorrelationImageRegistration PhaseCorrelationImageRegistration.cxx)
-target_link_libraries(PhaseCorrelationImageRegistration ${ITK_LIBRARIES})
+target_link_libraries(PhaseCorrelationImageRegistration ${ITK_INTERFACE_LIBRARIES})
 
 add_executable(CompleteMontage CompleteMontage.cxx)
-target_link_libraries(CompleteMontage ${ITK_LIBRARIES})
+target_link_libraries(CompleteMontage ${ITK_INTERFACE_LIBRARIES})
 
 add_executable(RefineMontage RefineMontage.cxx)
-target_link_libraries(RefineMontage ${ITK_LIBRARIES})
+target_link_libraries(RefineMontage ${ITK_INTERFACE_LIBRARIES})
 
 add_executable(ResampleMontage ResampleMontage.cxx)
-target_link_libraries(ResampleMontage ${ITK_LIBRARIES})
+target_link_libraries(ResampleMontage ${ITK_INTERFACE_LIBRARIES})
 
 add_executable(CompareTileConfigurations CompareTileConfigurations.cxx)
-target_link_libraries(CompareTileConfigurations ${ITK_LIBRARIES})
+target_link_libraries(CompareTileConfigurations ${ITK_INTERFACE_LIBRARIES})
 
 add_executable(MontageImageCompareCommand MontageImageCompareCommand.cxx)
-target_link_libraries(MontageImageCompareCommand ${ITK_LIBRARIES})
+target_link_libraries(MontageImageCompareCommand ${ITK_INTERFACE_LIBRARIES})
 
 
 # add some regression tests
